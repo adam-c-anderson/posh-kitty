@@ -7,16 +7,19 @@ if (-not (Test-Path Function:\OriginalPrompt)) {
 }
 
 function prompt {
-    # OSC 133;A - indicates start of prompt
-    # This is used by Final Term to indicate the start of a new prompt
-    Write-Host -NoNewline "${osc}133;A${st}"
-
-    # OSC 7 - Set the current working directory in the terminal
+    # OSC 1337 - Set the current working directory in the terminal
     $p = $executionContext.SessionState.Path.CurrentLocation
     if ($p.Provider.Name -eq "FileSystem") {
         $provider_path = $p.ProviderPath -Replace "\\", "/"
-        Write-Host -NoNewline "${osc}7;file://${env:COMPUTERNAME}/${provider_path}${st}"
+        Write-Host -NoNewline "${osc}1337;CurrentDir=${provider_path}${st}"
+        # Also update the process CWD. This doesn't happen automatically https://github.com/PowerShell/PowerShell/issues/9325
+        # Necessary for the choose-files kitten to start in the current dir when launched by shortcut (kitty_mod+p>c by default)
+        [Environment]::CurrentDirectory = $provider_path
     }
+
+    # OSC 133;A - indicates start of prompt
+    # This is used by Final Term to indicate the start of a new prompt
+    Write-Host -NoNewline "${osc}133;A${st}"
 
     # Call the original prompt function and capture its output
     $originalPrompt = & $function:OriginalPrompt
